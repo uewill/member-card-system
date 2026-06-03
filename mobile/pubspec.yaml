@@ -1,0 +1,59 @@
+name: member_card_app
+description: 通用多租户次卡会员管理系统 - 移动端
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # 状态管理
+  provider: ^6.1.1
+  
+  # 网络请求
+  dio: ^5.4.0
+  
+  # 本地存储
+  shared_preferences: ^2.2.2
+  
+  # 路由
+  go_router: ^13.2.0
+  
+  # UI组件
+  flutter_screenutil: ^5.9.0
+  
+  # 工具类
+  intl: ^0.19.0
+  
+  # 二维码
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^4.0.1
+  
+  # 图标
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+  
+  fonts:
+    - family: NotoSansSC
+      fonts:
+        - asset: assets/fonts/NotoSansSC-Regular.ttf
+        - asset: assets/fonts/NotoSansSC-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSansSC-Bold.ttf
+          weight: 700
