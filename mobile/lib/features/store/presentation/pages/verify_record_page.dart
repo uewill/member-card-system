@@ -1,0 +1,362 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:member_card_app/core/utils/responsive_helper.dart';
+import 'package:member_card_app/shared/services/api/verify_repository.dart';
+
+/// 核销记录页 - 日期筛选 + 搜索 + 记录列表
+class VerifyRecordPage extends StatefulWidget {
+  const VerifyRecordPage({super.key});
+
+  @override
+  State<VerifyRecordPage> createState() => _VerifyRecordPageState();
+}
+
+class _VerifyRecordPageState extends State<VerifyRecordPage> {
+  final VerifyRepository _verifyRepo = VerifyRepository();
+  final TextEditingController _searchController = TextEditingController();
+
+  bool _isLoading = false;
+  List<dynamic> _records = [];
+  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _endDate = DateTime.now();
+
+  // Mock 数据
+  final List<Map<String, dynamic>> _mockRecords = [
+    {
+      'memberName': '李美丽',
+      'serviceItem': '面部护理',
+      'deductCount': 1,
+      'remaining': 5,
+      'operator': '王技师',
+      'time': '2024-06-03 14:30',
+    },
+    {
+      'memberName': '张婷',
+      'serviceItem': '精油按摩',
+      'deductCount': 1,
+      'remaining': 2,
+      'operator': '王技师',
+      'time': '2024-06-03 11:00',
+    },
+    {
+      'memberName': '刘洋',
+      'serviceItem': '洗剪吹',
+      'deductCount': 1,
+      'remaining': 7,
+      'operator': '李小花',
+      'time': '2024-06-03 10:20',
+    },
+    {
+      'memberName': '陈静',
+      'serviceItem': '全身SPA',
+      'deductCount': 1,
+      'remaining': 1,
+      'operator': '王技师',
+      'time': '2024-06-02 16:00',
+    },
+    {
+      'memberName': '赵敏',
+      'serviceItem': '美甲护理',
+      'deductCount': 1,
+      'remaining': 3,
+      'operator': '李小花',
+      'time': '2024-06-02 14:30',
+    },
+    {
+      'memberName': '李美丽',
+      'serviceItem': '肩颈按摩',
+      'deductCount': 1,
+      'remaining': 4,
+      'operator': '王技师',
+      'time': '2024-06-01 15:00',
+    },
+    {
+      'memberName': '孙丽',
+      'serviceItem': '面部护理',
+      'deductCount': 1,
+      'remaining': 8,
+      'operator': '王技师',
+      'time': '2024-06-01 11:30',
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecords();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadRecords() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await _verifyRepo.getVerifyRecords();
+      if (mounted) setState(() => _records = data);
+    } catch (e) {
+      debugPrint('加载核销记录失败，使用 Mock 数据: $e');
+      if (mounted) setState(() => _records = _mockRecords);
+    }
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _selectDateRange(BuildContext context) async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2024),
+      lastDate: DateTime.now(),
+      initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
+    );
+    if (picked != null) {
+      setState(() {
+        _startDate = picked.start;
+        _endDate = picked.end;
+      });
+      await _loadRecords();
+    }
+  }
+
+  List<dynamic> get _filteredRecords {
+    var records = _records.isNotEmpty ? _records : _mockRecords;
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isNotEmpty) {
+      records = records.where((r) {
+        final item = r as Map<String, dynamic>;
+        final name = (item['memberName'] ?? '').toString().toLowerCase();
+        final service =
+            (item['serviceItem'] ?? '').toString().toLowerCase();
+        return name.contains(query) || service.contains(query);
+      }).toList();
+    }
+    return records;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final spacing = ResponsiveHelper.spacing(context);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        title: const Text('核销记录'),
+        backgroundColor: const Color(0xFF0052D9),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          // 搜索和筛选栏
+          Container(
+            padding: EdgeInsets.all(spacing),
+            color: Colors.white,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 36.h,
+                    padding: EdgeInsets.symmetric(horizontal: 12.w),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F8FA),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.search,
+                            size: 16.sp, color: const Color(0xFFC9CDD4)),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            style: TextStyle(fontSize: 13.sp),
+                            decoration: const InputDecoration(
+                              hintText: '搜索会员名/服务项目',
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                GestureDetector(
+                  onTap: () => _selectDateRange(context),
+                  child: Container(
+                    height: 36.h,
+                    padding: EdgeInsets.symmetric(horizontal: 12.w),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F8FA),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.date_range,
+                            size: 16.sp, color: const Color(0xFF0052D9)),
+                        SizedBox(width: 4.w),
+                        Text(
+                          '${_startDate.month}/${_startDate.day}-${_endDate.month}/${_endDate.day}',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: const Color(0xFF0052D9),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 记录列表
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredRecords.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.inbox,
+                                size: 48.sp, color: const Color(0xFFC9CDD4)),
+                            SizedBox(height: 12.h),
+                            Text('暂无核销记录',
+                                style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: const Color(0xFF86909C))),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: EdgeInsets.all(spacing),
+                        itemCount: _filteredRecords.length,
+                        itemBuilder: (context, index) {
+                          final item =
+                              _filteredRecords[index] as Map<String, dynamic>;
+                          return _buildRecordCard(item, spacing);
+                        },
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecordCard(Map<String, dynamic> item, double spacing) {
+    final remaining = item['remaining'] as int? ?? 0;
+    final isLow = remaining <= 2;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.all(spacing),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // 顶部：会员名 + 服务项目
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 36.r,
+                    height: 36.r,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00A870).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(18.r),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.check,
+                          size: 18, color: Color(0xFF00A870)),
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item['memberName'] ?? '',
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1D2129),
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        item['serviceItem'] ?? '',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: const Color(0xFF86909C),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '-${item['deductCount'] ?? 1}次',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFE34D59),
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    '剩余 $remaining 次',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: isLow
+                          ? const Color(0xFFE34D59)
+                          : const Color(0xFF86909C),
+                      fontWeight:
+                          isLow ? FontWeight.w500 : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          // 底部：操作人 + 时间
+          Row(
+            children: [
+              Icon(Icons.person_outline,
+                  size: 12.sp, color: const Color(0xFFC9CDD4)),
+              SizedBox(width: 4.w),
+              Text('操作人: ${item['operator'] ?? ''}',
+                  style: TextStyle(
+                      fontSize: 12.sp, color: const Color(0xFF86909C))),
+              const Spacer(),
+              Text(item['time'] ?? '',
+                  style: TextStyle(
+                      fontSize: 12.sp, color: const Color(0xFFC9CDD4))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

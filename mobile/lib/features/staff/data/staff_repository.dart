@@ -42,7 +42,7 @@ class StaffRepository {
   }
 
   /// 获取服务历史详情
-  Future<Map<String, dynamic>> getServiceHistoryDetail(Long orderId) async {
+  Future<Map<String, dynamic>> getServiceHistoryDetail(int orderId) async {
     final response = await _apiClient.get('/staff/service-history/$orderId');
     return response.data['data'];
   }

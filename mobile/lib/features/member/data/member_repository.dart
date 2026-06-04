@@ -34,7 +34,7 @@ class MemberRepository {
   }
 
   /// 获取消费记录详情
-  Future<Map<String, dynamic>> getConsumeDetail(Long orderId) async {
+  Future<Map<String, dynamic>> getConsumeDetail(int orderId) async {
     final response = await _apiClient.get('/member/consume-records/$orderId');
     return response.data['data'];
   }
@@ -46,15 +46,15 @@ class MemberRepository {
   }
 
   /// 获取套餐详情
-  Future<Map<String, dynamic>> getPackageDetail(Long templateId) async {
+  Future<Map<String, dynamic>> getPackageDetail(int templateId) async {
     final response = await _apiClient.get('/member/packages/$templateId');
     return response.data['data'];
   }
 
   /// 创建购买套餐订单
   Future<Map<String, dynamic>> createPurchaseOrder({
-    required Long templateId,
-    required Long storeId,
+    required int templateId,
+    required int storeId,
     required String paymentMethod,
   }) async {
     final response = await _apiClient.post('/member/purchase', data: {
@@ -95,7 +95,7 @@ class MemberRepository {
   }
 
   /// 标记消息已读
-  Future<void> markNotificationRead(Long notificationId) async {
+  Future<void> markNotificationRead(int notificationId) async {
     await _apiClient.put('/member/notifications/$notificationId/read');
   }
 
@@ -113,7 +113,7 @@ class MemberRepository {
 
   /// 创建充值订单
   Future<Map<String, dynamic>> createRechargeOrder({
-    required Long cardId,
+    required int cardId,
     required double amount,
     required String paymentMethod,
   }) async {

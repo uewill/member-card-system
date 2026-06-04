@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.membercard.mapper.ConsumeOrderMapper">
+
+    <resultMap id="consumeOrderResultMap" type="com.membercard.entity.ConsumeOrder">
+        <id property="id" column="id"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="storeId" column="store_id"/>
+        <result property="memberId" column="member_id"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="actualPaid" column="actual_paid"/>
+        <result property="paymentMethodsJson" column="payment_methods_json"/>
+        <result property="employeeId" column="employee_id"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findPagedByTenantId" resultMap="consumeOrderResultMap">
+        SELECT * FROM consume_order
+        WHERE tenant_id = #{tenantId}
+        ORDER BY created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="countByTenantId" resultType="int">
+        SELECT COUNT(*) FROM consume_order WHERE tenant_id = #{tenantId}
+    </select>
+
+    <select id="findPagedByDateRange" resultMap="consumeOrderResultMap">
+        SELECT * FROM consume_order
+        WHERE tenant_id = #{tenantId}
+        AND created_at >= #{startDate} AND created_at &lt;= #{endDate}
+        ORDER BY created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="countByDateRange" resultType="int">
+        SELECT COUNT(*) FROM consume_order
+        WHERE tenant_id = #{tenantId}
+        AND created_at >= #{startDate} AND created_at &lt;= #{endDate}
+    </select>
+
+</mapper>

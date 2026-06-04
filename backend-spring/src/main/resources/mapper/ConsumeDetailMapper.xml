@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.membercard.mapper.ConsumeDetailMapper">
+
+    <resultMap id="consumeDetailResultMap" type="com.membercard.entity.ConsumeDetail">
+        <id property="id" column="id"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="orderId" column="order_id"/>
+        <result property="serviceItemId" column="service_item_id"/>
+        <result property="cardId" column="card_id"/>
+        <result property="deductionType" column="deduction_type"/>
+        <result property="deductionCount" column="deduction_count"/>
+        <result property="deductionAmount" column="deduction_amount"/>
+        <result property="beforeSnapshotJson" column="before_snapshot_json"/>
+        <result property="afterSnapshotJson" column="after_snapshot_json"/>
+        <result property="employeeRatioJson" column="employee_ratio_json"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findPagedByTenantId" resultMap="consumeDetailResultMap">
+        SELECT * FROM consume_detail
+        WHERE tenant_id = #{tenantId}
+        ORDER BY created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="countByTenantId" resultType="int">
+        SELECT COUNT(*) FROM consume_detail WHERE tenant_id = #{tenantId}
+    </select>
+
+</mapper>

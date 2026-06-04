@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.membercard.mapper.PaymentRecordMapper">
+
+    <resultMap id="paymentRecordResultMap" type="com.membercard.entity.PaymentRecord">
+        <id property="id" column="id"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="storeId" column="store_id"/>
+        <result property="orderId" column="order_id"/>
+        <result property="type" column="type"/>
+        <result property="paymentMethod" column="payment_method"/>
+        <result property="amount" column="amount"/>
+        <result property="cardDeductionsJson" column="card_deductions_json"/>
+        <result property="cashAmount" column="cash_amount"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findPagedByTenantId" resultMap="paymentRecordResultMap">
+        SELECT * FROM payment_record
+        WHERE tenant_id = #{tenantId}
+        ORDER BY created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="countByTenantId" resultType="int">
+        SELECT COUNT(*) FROM payment_record WHERE tenant_id = #{tenantId}
+    </select>
+
+    <select id="findPagedByDateRange" resultMap="paymentRecordResultMap">
+        SELECT * FROM payment_record
+        WHERE tenant_id = #{tenantId}
+        AND created_at >= #{startDate} AND created_at &lt;= #{endDate}
+        ORDER BY created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="countByDateRange" resultType="int">
+        SELECT COUNT(*) FROM payment_record
+        WHERE tenant_id = #{tenantId}
+        AND created_at >= #{startDate} AND created_at &lt;= #{endDate}
+    </select>
+
+    <select id="sumByTypeAndDateRange" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(amount), 0) FROM payment_record
+        WHERE tenant_id = #{tenantId} AND type = #{type}
+        AND created_at >= #{startDate} AND created_at &lt;= #{endDate}
+    </select>
+
+</mapper>

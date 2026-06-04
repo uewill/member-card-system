@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.membercard.mapper.PackageTemplateMapper">
+
+    <resultMap id="packageTemplateResultMap" type="com.membercard.entity.PackageTemplate">
+        <id property="id" column="id"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="name" column="name"/>
+        <result property="type" column="type"/>
+        <result property="serviceItemsJson" column="service_items_json"/>
+        <result property="serviceCountsJson" column="service_counts_json"/>
+        <result property="principalAmount" column="principal_amount"/>
+        <result property="bonusAmount" column="bonus_amount"/>
+        <result property="sellingPrice" column="selling_price"/>
+        <result property="validityType" column="validity_type"/>
+        <result property="validityDays" column="validity_days"/>
+        <result property="expiryDate" column="expiry_date"/>
+        <result property="allowTransfer" column="allow_transfer"/>
+        <result property="allowDiscountCombo" column="allow_discount_combo"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findPagedByTenantId" resultMap="packageTemplateResultMap">
+        SELECT * FROM package_template
+        WHERE tenant_id = #{tenantId}
+        ORDER BY created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="countByTenantId" resultType="int">
+        SELECT COUNT(*) FROM package_template WHERE tenant_id = #{tenantId}
+    </select>
+
+</mapper>

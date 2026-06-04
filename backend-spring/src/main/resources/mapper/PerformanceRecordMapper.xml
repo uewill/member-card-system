@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.membercard.mapper.PerformanceRecordMapper">
+
+    <resultMap id="performanceRecordResultMap" type="com.membercard.entity.PerformanceRecord">
+        <id property="id" column="id"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="employeeId" column="employee_id"/>
+        <result property="storeId" column="store_id"/>
+        <result property="date" column="date"/>
+        <result property="serviceCount" column="service_count"/>
+        <result property="serviceAmount" column="service_amount"/>
+        <result property="commission" column="commission"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="sumByEmployeeAndDateRange" resultType="java.util.Map">
+        SELECT employee_id,
+               COALESCE(SUM(service_count), 0) as total_service_count,
+               COALESCE(SUM(service_amount), 0) as total_service_amount,
+               COALESCE(SUM(commission), 0) as total_commission
+        FROM performance_record
+        WHERE tenant_id = #{tenantId} AND employee_id = #{employeeId}
+        AND date >= #{startDate} AND date &lt;= #{endDate}
+        GROUP BY employee_id
+    </select>
+
+    <select id="sumByStoreAndDateRange" resultType="java.util.Map">
+        SELECT store_id,
+               COALESCE(SUM(service_count), 0) as total_service_count,
+               COALESCE(SUM(service_amount), 0) as total_service_amount,
+               COALESCE(SUM(commission), 0) as total_commission
+        FROM performance_record
+        WHERE tenant_id = #{tenantId} AND store_id = #{storeId}
+        AND date >= #{startDate} AND date &lt;= #{endDate}
+        GROUP BY store_id
+    </select>
+
+    <select id="sumAllByDateRange" resultType="java.util.Map">
+        SELECT
+               COALESCE(SUM(service_count), 0) as total_service_count,
+               COALESCE(SUM(service_amount), 0) as total_service_amount,
+               COALESCE(SUM(commission), 0) as total_commission
+        FROM performance_record
+        WHERE tenant_id = #{tenantId}
+        AND date >= #{startDate} AND date &lt;= #{endDate}
+    </select>
+
+</mapper>
