@@ -16,7 +16,7 @@ class ApiClient {
   bool useRealApi = true;
 
   /// 是否启用 Mock fallback（真实 API 失败时回退到 Mock）
-  bool enableMockFallback = true;
+  bool enableMockFallback = false;
 
   ApiClient._internal() {
     _dio = Dio(BaseOptions(

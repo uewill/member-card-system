@@ -17,16 +17,8 @@ class MemberManagePage extends StatefulWidget {
 class _MemberManagePageState extends State<MemberManagePage> {
   final TextEditingController _searchController = TextEditingController();
 
-  // Mock 数据（作为 API 失败时的 fallback）
-  final List<Map<String, dynamic>> _mockMembers = [
-    {'name': '李美丽', 'phone': '138****8888', 'level': 'VIP', 'balance': 1280, 'points': 2580},
-    {'name': '王芳', 'phone': '139****6666', 'level': '普通', 'balance': 0, 'points': 580},
-    {'name': '张婷', 'phone': '137****9999', 'level': 'VIP', 'balance': 3500, 'points': 4200},
-    {'name': '刘洋', 'phone': '136****1111', 'level': '普通', 'balance': 200, 'points': 320},
-    {'name': '陈静', 'phone': '135****2222', 'level': 'VIP', 'balance': 2800, 'points': 3600},
-  ];
-
   String _searchQuery = '';
+  String? _error;
   Timer? _debounceTimer;
 
   @override
@@ -42,13 +34,15 @@ class _MemberManagePageState extends State<MemberManagePage> {
     super.dispose();
   }
 
-  /// 加载会员列表（优先使用 API，失败时 fallback 到 Mock）
+  /// 加载会员列表
   Future<void> _loadMembers({String? query}) async {
+    _error = null;
     try {
       final memberProvider = context.read<MemberProvider>();
       await memberProvider.loadMembers(query: query);
     } catch (e) {
-      debugPrint('加载会员列表失败，使用 Mock 数据: $e');
+      debugPrint('加载会员列表失败: $e');
+      if (mounted) setState(() => _error = e.toString());
     }
   }
 
@@ -61,22 +55,13 @@ class _MemberManagePageState extends State<MemberManagePage> {
     });
   }
 
-  /// 获取当前显示的会员数据（API 数据优先，Mock 作为 fallback）
+  /// 获取当前显示的会员数据
   List<dynamic> get _displayMembers {
     final memberProvider = context.watch<MemberProvider>();
     if (memberProvider.members.isNotEmpty) {
       return memberProvider.members;
     }
-    // 如果有搜索关键词，过滤 Mock 数据
-    if (_searchQuery.isNotEmpty) {
-      return _mockMembers.where((m) {
-        final name = (m['name'] ?? '').toString().toLowerCase();
-        final phone = (m['phone'] ?? '').toString().toLowerCase();
-        final query = _searchQuery.toLowerCase();
-        return name.contains(query) || phone.contains(query);
-      }).toList();
-    }
-    return _mockMembers;
+    return [];
   }
 
   @override
@@ -143,6 +128,31 @@ class _MemberManagePageState extends State<MemberManagePage> {
                   return const Center(
                     child: CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0052D9)),
+                    ),
+                  );
+                }
+                if (_error != null && provider.members.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline, size: 48.sp, color: const Color(0xFFE34D59)),
+                        SizedBox(height: 12.h),
+                        Text('加载失败', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: const Color(0xFF1D2129))),
+                        SizedBox(height: 4.h),
+                        Text(_error!, style: TextStyle(fontSize: 13.sp, color: const Color(0xFF86909C)),
+                            textAlign: TextAlign.center).paddingSymmetric(horizontal: 32.w),
+                        SizedBox(height: 16.h),
+                        ElevatedButton(
+                          onPressed: () => _loadMembers(query: _searchQuery.isEmpty ? null : _searchQuery),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0052D9),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                          ),
+                          child: const Text('重试'),
+                        ),
+                      ],
                     ),
                   );
                 }

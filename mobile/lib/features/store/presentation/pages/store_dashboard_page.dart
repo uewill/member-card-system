@@ -18,26 +18,11 @@ class StoreDashboardPage extends StatefulWidget {
 class _StoreDashboardPageState extends State<StoreDashboardPage> {
   int _currentIndex = 0;
 
-  // Mock 数据（作为 API 失败时的 fallback）
-  final List<Map<String, dynamic>> _mockMembers = [
-    {'name': '李美丽', 'phone': '138****8888', 'level': 'VIP', 'balance': 1280, 'points': 2580},
-    {'name': '王芳', 'phone': '139****6666', 'level': '普通', 'balance': 0, 'points': 580},
-    {'name': '张婷', 'phone': '137****9999', 'level': 'VIP', 'balance': 3500, 'points': 4200},
-    {'name': '刘洋', 'phone': '136****1111', 'level': '普通', 'balance': 200, 'points': 320},
-    {'name': '陈静', 'phone': '135****2222', 'level': 'VIP', 'balance': 2800, 'points': 3600},
-  ];
-
-  final Map<String, String> _mockStats = {
-    'todayRevenue': '¥3,280',
-    'serviceCount': '18人',
-    'newMembers': '3人',
-    'cardVerify': '12次',
-  };
-
   // API 加载的数据
   List<dynamic> _apiMembers = [];
   Map<String, dynamic>? _apiPerformance;
   bool _isLoading = true;
+  String? _error;
 
   final List<Map<String, dynamic>> _menuItems = [
     {'icon': Icons.people_outline, 'label': '会员管理', 'route': '/members', 'color': Color(0xFF0052D9)},
@@ -66,6 +51,7 @@ class _StoreDashboardPageState extends State<StoreDashboardPage> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
+    _error = null;
 
     // 并行加载会员列表和业绩数据
     try {
@@ -73,14 +59,16 @@ class _StoreDashboardPageState extends State<StoreDashboardPage> {
       await memberProvider.loadMembers();
       _apiMembers = memberProvider.members;
     } catch (e) {
-      debugPrint('加载会员列表失败，使用 Mock 数据: $e');
+      debugPrint('加载会员列表失败: $e');
+      _error = '加载会员列表失败';
     }
 
     try {
       final perfRepo = PerformanceRepository();
       _apiPerformance = await perfRepo.getPerformance(period: 'today');
     } catch (e) {
-      debugPrint('加载业绩数据失败，使用 Mock 数据: $e');
+      debugPrint('加载业绩数据失败: $e');
+      if (_error == null) _error = '加载业绩数据失败';
     }
 
     if (mounted) {
@@ -88,19 +76,18 @@ class _StoreDashboardPageState extends State<StoreDashboardPage> {
     }
   }
 
-  /// 获取当前显示的会员数据（API 数据优先，Mock 作为 fallback）
-  List<dynamic> get _displayMembers =>
-      _apiMembers.isNotEmpty ? _apiMembers : _mockMembers;
+  /// 获取当前显示的会员数据
+  List<dynamic> get _displayMembers => _apiMembers;
 
   /// 获取今日营收
   String get _todayRevenue {
     if (_apiPerformance != null) {
       try {
         final stats = _apiPerformance!['todayStats'] ?? _apiPerformance;
-        return '¥${(stats['serviceAmount'] ?? 3280).toString()}';
+        return '¥${(stats['serviceAmount'] ?? 0).toString()}';
       } catch (_) {}
     }
-    return _mockStats['todayRevenue']!;
+    return '¥0';
   }
 
   /// 获取服务人次
@@ -108,10 +95,10 @@ class _StoreDashboardPageState extends State<StoreDashboardPage> {
     if (_apiPerformance != null) {
       try {
         final stats = _apiPerformance!['todayStats'] ?? _apiPerformance;
-        return '${stats['serviceCount'] ?? 18}人';
+        return '${stats['serviceCount'] ?? 0}人';
       } catch (_) {}
     }
-    return _mockStats['serviceCount']!;
+    return '0人';
   }
 
   /// 获取新增会员
@@ -119,10 +106,10 @@ class _StoreDashboardPageState extends State<StoreDashboardPage> {
     if (_apiPerformance != null) {
       try {
         final stats = _apiPerformance!['todayStats'] ?? _apiPerformance;
-        return '${stats['newMembers'] ?? 3}人';
+        return '${stats['newMembers'] ?? 0}人';
       } catch (_) {}
     }
-    return _mockStats['newMembers']!;
+    return '0人';
   }
 
   /// 获取次卡核销
@@ -130,10 +117,10 @@ class _StoreDashboardPageState extends State<StoreDashboardPage> {
     if (_apiPerformance != null) {
       try {
         final stats = _apiPerformance!['todayStats'] ?? _apiPerformance;
-        return '${stats['cardVerify'] ?? 12}次';
+        return '${stats['cardVerify'] ?? 0}次';
       } catch (_) {}
     }
-    return _mockStats['cardVerify']!;
+    return '0次';
   }
 
   /// 获取当前员工信息

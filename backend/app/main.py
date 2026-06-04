@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routers import auth, members, cards, products, card_types, bonus_rules, verify, recharge, performance, settings, print_templates, reports, marketing, employees, card_operations, orders, roles
+from app.routers import auth, members, cards, products, card_types, bonus_rules, verify, recharge, performance, settings, print_templates, reports, marketing, employees, card_operations, orders, roles, member_app, staff_app
 
 Base.metadata.create_all(bind=engine)
 
@@ -36,6 +36,8 @@ app.include_router(employees.router, prefix="/employees", tags=["员工管理"])
 app.include_router(card_operations.router, prefix="/card-operations", tags=["卡操作"])
 app.include_router(orders.router, prefix="/orders", tags=["消费订单"])
 app.include_router(roles.router, prefix="/roles", tags=["RBAC"])
+app.include_router(member_app.router, prefix="/member", tags=["会员端APP"])
+app.include_router(staff_app.router, prefix="/staff", tags=["员工端APP"])
 
 # /api/v1/ 前缀兼容路由（供 Flutter 前端按 openspec 规范调用）
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["认证"])
@@ -55,6 +57,8 @@ app.include_router(employees.router, prefix="/api/v1/employees", tags=["员工�
 app.include_router(card_operations.router, prefix="/api/v1/card-operations", tags=["卡操作"])
 app.include_router(orders.router, prefix="/api/v1/orders", tags=["消费订单"])
 app.include_router(roles.router, prefix="/api/v1/roles", tags=["RBAC"])
+app.include_router(member_app.router, prefix="/api/v1/member", tags=["会员端APP"])
+app.include_router(staff_app.router, prefix="/api/v1/staff", tags=["员工端APP"])
 
 
 @app.get("/")

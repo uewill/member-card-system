@@ -17,68 +17,9 @@ class _RechargeRecordPageState extends State<RechargeRecordPage> {
 
   bool _isLoading = false;
   List<dynamic> _records = [];
+  String? _error;
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
-
-  // Mock 数据
-  final List<Map<String, dynamic>> _mockRecords = [
-    {
-      'memberName': '李美丽',
-      'amount': 500,
-      'bonus': 50,
-      'payMethod': '微信支付',
-      'operator': '张美容',
-      'time': '2024-06-03 14:30',
-    },
-    {
-      'memberName': '王芳',
-      'amount': 1000,
-      'bonus': 200,
-      'payMethod': '支付宝',
-      'operator': '李小花',
-      'time': '2024-06-03 13:15',
-    },
-    {
-      'memberName': '张婷',
-      'amount': 2000,
-      'bonus': 500,
-      'payMethod': '微信支付',
-      'operator': '张美容',
-      'time': '2024-06-03 11:00',
-    },
-    {
-      'memberName': '刘洋',
-      'amount': 300,
-      'bonus': 0,
-      'payMethod': '现金',
-      'operator': '赵前台',
-      'time': '2024-06-02 16:20',
-    },
-    {
-      'memberName': '陈静',
-      'amount': 1980,
-      'bonus': 380,
-      'payMethod': '微信支付',
-      'operator': '李小花',
-      'time': '2024-06-02 10:00',
-    },
-    {
-      'memberName': '赵敏',
-      'amount': 800,
-      'bonus': 80,
-      'payMethod': '支付宝',
-      'operator': '张美容',
-      'time': '2024-06-01 15:30',
-    },
-    {
-      'memberName': '孙丽',
-      'amount': 5000,
-      'bonus': 1500,
-      'payMethod': '银行卡',
-      'operator': '张美容',
-      'time': '2024-06-01 11:00',
-    },
-  ];
 
   @override
   void initState() {
@@ -94,12 +35,13 @@ class _RechargeRecordPageState extends State<RechargeRecordPage> {
 
   Future<void> _loadRecords() async {
     setState(() => _isLoading = true);
+    _error = null;
     try {
       final data = await _rechargeRepo.getRechargeRecords();
       if (mounted) setState(() => _records = data);
     } catch (e) {
-      debugPrint('加载充值记录失败，使用 Mock 数据: $e');
-      if (mounted) setState(() => _records = _mockRecords);
+      debugPrint('加载充值记录失败: $e');
+      if (mounted) setState(() => _error = e.toString());
     }
     if (mounted) setState(() => _isLoading = false);
   }
@@ -121,7 +63,7 @@ class _RechargeRecordPageState extends State<RechargeRecordPage> {
   }
 
   List<dynamic> get _filteredRecords {
-    var records = _records.isNotEmpty ? _records : _mockRecords;
+    var records = _records;
     final query = _searchController.text.trim().toLowerCase();
     if (query.isNotEmpty) {
       records = records.where((r) {
@@ -218,30 +160,54 @@ class _RechargeRecordPageState extends State<RechargeRecordPage> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _filteredRecords.isEmpty
+                : _error != null
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.inbox,
-                                size: 48.sp, color: const Color(0xFFC9CDD4)),
+                            Icon(Icons.error_outline, size: 48.sp, color: const Color(0xFFE34D59)),
                             SizedBox(height: 12.h),
-                            Text('暂无充值记录',
-                                style: TextStyle(
-                                    fontSize: 14.sp,
-                                    color: const Color(0xFF86909C))),
+                            Text('加载失败', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: const Color(0xFF1D2129))),
+                            SizedBox(height: 4.h),
+                            Text(_error!, style: TextStyle(fontSize: 13.sp, color: const Color(0xFF86909C)),
+                                textAlign: TextAlign.center).paddingSymmetric(horizontal: 32.w),
+                            SizedBox(height: 16.h),
+                            ElevatedButton(
+                              onPressed: _loadRecords,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0052D9),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                              ),
+                              child: const Text('重试'),
+                            ),
                           ],
                         ),
                       )
-                    : ListView.builder(
-                        padding: EdgeInsets.all(spacing),
-                        itemCount: _filteredRecords.length,
-                        itemBuilder: (context, index) {
-                          final item =
-                              _filteredRecords[index] as Map<String, dynamic>;
-                          return _buildRecordCard(item, spacing);
-                        },
-                      ),
+                    : _filteredRecords.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.inbox,
+                                    size: 48.sp, color: const Color(0xFFC9CDD4)),
+                                SizedBox(height: 12.h),
+                                Text('暂无充值记录',
+                                    style: TextStyle(
+                                        fontSize: 14.sp,
+                                        color: const Color(0xFF86909C))),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: EdgeInsets.all(spacing),
+                            itemCount: _filteredRecords.length,
+                            itemBuilder: (context, index) {
+                              final item =
+                                  _filteredRecords[index] as Map<String, dynamic>;
+                              return _buildRecordCard(item, spacing);
+                            },
+                          ),
           ),
         ],
       ),

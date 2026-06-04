@@ -18,6 +18,7 @@ class _MarketingPageState extends State<MarketingPage>
 
   bool _isLoading = false;
   List<dynamic> _coupons = [];
+  String? _error;
 
   // 积分规则
   bool _pointsEnabled = true;
@@ -27,51 +28,6 @@ class _MarketingPageState extends State<MarketingPage>
   bool _cardExpiryNotify = true;
   bool _birthdayNotify = true;
   bool _activityNotify = false;
-
-  // Mock 优惠券数据
-  final List<Map<String, dynamic>> _mockCoupons = [
-    {
-      'name': '新客首单8折券',
-      'type': '折扣券',
-      'value': '8折',
-      'validPeriod': '2024-06-01 ~ 2024-06-30',
-      'status': '进行中',
-      'statusColor': const Color(0xFF00A870),
-    },
-    {
-      'name': '满200减30券',
-      'type': '满减券',
-      'value': '¥30',
-      'validPeriod': '2024-06-01 ~ 2024-07-31',
-      'status': '进行中',
-      'statusColor': const Color(0xFF00A870),
-    },
-    {
-      'name': '充值赠送券',
-      'type': '赠品券',
-      'value': '赠面膜1片',
-      'validPeriod': '2024-05-01 ~ 2024-05-31',
-      'status': '已结束',
-      'statusColor': const Color(0xFF86909C),
-    },
-    {
-      'name': '会员日9折券',
-      'type': '折扣券',
-      'value': '9折',
-      'validPeriod': '2024-06-15 ~ 2024-06-15',
-      'status': '未开始',
-      'statusColor': const Color(0xFFEBB105),
-    },
-  ];
-
-  // Mock 积分兑换记录
-  final List<Map<String, dynamic>> _mockPointsRecords = [
-    {'member': '李美丽', 'action': '消费积分', 'points': '+52', 'time': '2024-06-03 14:30'},
-    {'member': '王芳', 'action': '兑换面膜', 'points': '-200', 'time': '2024-06-03 13:15'},
-    {'member': '张婷', 'action': '消费积分', 'points': '+35', 'time': '2024-06-03 11:00'},
-    {'member': '刘洋', 'action': '兑换洗发水', 'points': '-500', 'time': '2024-06-02 16:20'},
-    {'member': '陈静', 'action': '消费积分', 'points': '+28', 'time': '2024-06-02 10:00'},
-  ];
 
   @override
   void initState() {
@@ -88,12 +44,13 @@ class _MarketingPageState extends State<MarketingPage>
 
   Future<void> _loadCoupons() async {
     setState(() => _isLoading = true);
+    _error = null;
     try {
       final data = await _couponRepo.getCoupons();
       if (mounted) setState(() => _coupons = data);
     } catch (e) {
-      debugPrint('加载优惠券失败，使用 Mock 数据: $e');
-      if (mounted) setState(() => _coupons = _mockCoupons);
+      debugPrint('加载优惠券失败: $e');
+      if (mounted) setState(() => _error = e.toString());
     }
     if (mounted) setState(() => _isLoading = false);
   }
@@ -306,9 +263,13 @@ class _MarketingPageState extends State<MarketingPage>
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF1D2129))),
           SizedBox(height: spacing * 0.75),
-          ...List.generate(_mockPointsRecords.length, (index) {
-            return _buildPointsRecordCard(_mockPointsRecords[index], spacing);
-          }),
+          Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 24.h),
+              child: Text('暂无积分兑换记录',
+                  style: TextStyle(fontSize: 14.sp, color: const Color(0xFF86909C))),
+            ),
+          ),
         ],
       ),
     );
@@ -372,8 +333,6 @@ class _MarketingPageState extends State<MarketingPage>
 
   /// 优惠券 Tab
   Widget _buildCouponTab(double spacing) {
-    final data = _coupons.isNotEmpty ? _coupons : _mockCoupons;
-
     return SingleChildScrollView(
       padding: EdgeInsets.all(spacing),
       child: Column(
@@ -398,11 +357,44 @@ class _MarketingPageState extends State<MarketingPage>
           ),
           SizedBox(height: spacing),
 
-          // 优惠券列表
-          ...List.generate(data.length, (index) {
-            final item = data[index] as Map<String, dynamic>;
-            return _buildCouponCard(item, spacing);
-          }),
+          // 错误状态
+          if (_error != null)
+            Center(
+              child: Column(
+                children: [
+                  Icon(Icons.error_outline, size: 36.sp, color: const Color(0xFFE34D59)),
+                  SizedBox(height: 8.h),
+                  Text('加载失败', style: TextStyle(fontSize: 14.sp, color: const Color(0xFF1D2129))),
+                  SizedBox(height: 4.h),
+                  Text(_error!, style: TextStyle(fontSize: 12.sp, color: const Color(0xFF86909C)),
+                      textAlign: TextAlign.center),
+                  SizedBox(height: 12.h),
+                  ElevatedButton(
+                    onPressed: _loadCoupons,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0052D9),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                    ),
+                    child: const Text('重试'),
+                  ),
+                ],
+              ),
+            )
+          else if (_coupons.isEmpty)
+            Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 24.h),
+                child: Text('暂无优惠券',
+                    style: TextStyle(fontSize: 14.sp, color: const Color(0xFF86909C))),
+              ),
+            )
+          else
+            // 优惠券列表
+            ...List.generate(_coupons.length, (index) {
+              final item = _coupons[index] as Map<String, dynamic>;
+              return _buildCouponCard(item, spacing);
+            }),
         ],
       ),
     );

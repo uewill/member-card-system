@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:member_card_app/shared/services/api/settings_repository.dart';
 
-/// 打印设置页面 - Mock 数据模式
+/// 打印设置页面 - 真实 API 数据
 class PrintSettingsPage extends StatefulWidget {
   const PrintSettingsPage({super.key});
 
@@ -10,11 +11,14 @@ class PrintSettingsPage extends StatefulWidget {
 }
 
 class _PrintSettingsPageState extends State<PrintSettingsPage> {
+  final SettingsRepository _settingsRepo = SettingsRepository();
+
   bool _autoPrint = true;
   bool _printReceipt = true;
   bool _printMemberInfo = true;
   String _paperSize = '80mm';
   int _printCopies = 1;
+  bool _isSaving = false;
 
   final List<String> _paperSizes = ['58mm', '80mm'];
 
@@ -134,11 +138,7 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
               width: double.infinity,
               height: 48.h,
               child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('设置已保存（Mock）'), backgroundColor: Color(0xFF0052D9)),
-                  );
-                },
+                onPressed: _isSaving ? null : _saveSettings,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0052D9),
                   foregroundColor: Colors.white,
@@ -147,10 +147,16 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
                   ),
                   elevation: 0,
                 ),
-                child: Text(
-                  '保存设置',
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
-                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : Text(
+                        '保存设置',
+                        style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+                      ),
               ),
             ),
             SizedBox(height: 20.h),
@@ -158,6 +164,32 @@ class _PrintSettingsPageState extends State<PrintSettingsPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _saveSettings() async {
+    setState(() => _isSaving = true);
+    try {
+      await _settingsRepo.updateSettings({
+        'autoPrint': _autoPrint,
+        'printReceipt': _printReceipt,
+        'printMemberInfo': _printMemberInfo,
+        'paperSize': _paperSize,
+        'printCopies': _printCopies,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('设置已保存'), backgroundColor: Color(0xFF0052D9)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('保存失败: $e'), backgroundColor: Color(0xFFE34D59)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   Widget _buildSectionTitle(String title) {

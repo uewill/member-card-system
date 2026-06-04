@@ -17,6 +17,7 @@ class _ReportCenterPageState extends State<ReportCenterPage>
   final ReportRepository _reportRepo = ReportRepository();
 
   bool _isLoading = false;
+  String? _error;
 
   // 日报数据
   Map<String, dynamic> _dailyData = {};
@@ -30,49 +31,6 @@ class _ReportCenterPageState extends State<ReportCenterPage>
   // 日期选择
   DateTime _selectedDate = DateTime.now();
   DateTime _selectedMonth = DateTime.now();
-
-  // Mock 数据
-  final Map<String, dynamic> _mockDaily = {
-    'revenue': 3280,
-    'consumeCount': 18,
-    'wechatPay': 65,
-    'alipayPay': 20,
-    'cashPay': 10,
-    'cardPay': 5,
-    'yesterdayRevenue': 2960,
-    'yesterdayConsumeCount': 15,
-  };
-
-  final Map<String, dynamic> _mockMonthly = {
-    'avgDailyRevenue': 3100,
-    'totalConsume': 420,
-    'newMembers': 28,
-    'totalRevenue': 93000,
-  };
-
-  final List<Map<String, dynamic>> _mockPackageSales = [
-    {'name': '面部护理10次卡', 'sales': 45, 'revenue': 89100, 'expired': 3},
-    {'name': '洗剪吹10次卡', 'sales': 38, 'revenue': 75240, 'expired': 5},
-    {'name': '精油按摩5次卡', 'sales': 22, 'revenue': 43890, 'expired': 2},
-    {'name': '全身SPA 3次卡', 'sales': 15, 'revenue': 44850, 'expired': 1},
-    {'name': '美甲套餐6次卡', 'sales': 12, 'revenue': 23760, 'expired': 4},
-  ];
-
-  final Map<String, dynamic> _mockMemberAnalysis = {
-    'newTrend': [
-      {'month': '1月', 'count': 12},
-      {'month': '2月', 'count': 8},
-      {'month': '3月', 'count': 15},
-      {'month': '4月', 'count': 20},
-      {'month': '5月', 'count': 18},
-      {'month': '6月', 'count': 28},
-    ],
-    'churnWarning': [
-      {'name': '刘洋', 'phone': '136****1111', 'lastVisit': '2024-04-15', 'days': 49},
-      {'name': '赵敏', 'phone': '133****5555', 'lastVisit': '2024-04-20', 'days': 44},
-      {'name': '孙丽', 'phone': '131****7777', 'lastVisit': '2024-04-25', 'days': 39},
-    ],
-  };
 
   @override
   void initState() {
@@ -89,6 +47,7 @@ class _ReportCenterPageState extends State<ReportCenterPage>
 
   Future<void> _loadAllData() async {
     setState(() => _isLoading = true);
+    _error = null;
 
     // 并行加载所有数据
     await Future.wait([
@@ -110,8 +69,8 @@ class _ReportCenterPageState extends State<ReportCenterPage>
       final data = await _reportRepo.getDailyReport(date: dateStr);
       if (mounted) setState(() => _dailyData = data);
     } catch (e) {
-      debugPrint('加载日报失败，使用 Mock 数据: $e');
-      if (mounted) setState(() => _dailyData = _mockDaily);
+      debugPrint('加载日报失败: $e');
+      if (_error == null && mounted) setState(() => _error = '加载日报失败');
     }
   }
 
@@ -122,8 +81,8 @@ class _ReportCenterPageState extends State<ReportCenterPage>
       final data = await _reportRepo.getMonthlyReport(month: monthStr);
       if (mounted) setState(() => _monthlyData = data);
     } catch (e) {
-      debugPrint('加载月报失败，使用 Mock 数据: $e');
-      if (mounted) setState(() => _monthlyData = _mockMonthly);
+      debugPrint('加载月报失败: $e');
+      if (_error == null && mounted) setState(() => _error = '加载月报失败');
     }
   }
 
@@ -132,8 +91,8 @@ class _ReportCenterPageState extends State<ReportCenterPage>
       final data = await _reportRepo.getPackageSales();
       if (mounted) setState(() => _packageSales = data);
     } catch (e) {
-      debugPrint('加载套餐销量失败，使用 Mock 数据: $e');
-      if (mounted) setState(() => _packageSales = _mockPackageSales);
+      debugPrint('加载套餐销量失败: $e');
+      if (_error == null && mounted) setState(() => _error = '加载套餐销量失败');
     }
   }
 
@@ -142,8 +101,8 @@ class _ReportCenterPageState extends State<ReportCenterPage>
       final data = await _reportRepo.getMemberAnalysis();
       if (mounted) setState(() => _memberAnalysis = data);
     } catch (e) {
-      debugPrint('加载会员分析失败，使用 Mock 数据: $e');
-      if (mounted) setState(() => _memberAnalysis = _mockMemberAnalysis);
+      debugPrint('加载会员分析失败: $e');
+      if (_error == null && mounted) setState(() => _error = '加载会员分析失败');
     }
   }
 
@@ -209,15 +168,39 @@ class _ReportCenterPageState extends State<ReportCenterPage>
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildDailyTab(spacing),
-                      _buildMonthlyTab(spacing),
-                      _buildPackageTab(spacing),
-                      _buildMemberAnalysisTab(spacing),
-                    ],
-                  ),
+                : _error != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline, size: 48.sp, color: const Color(0xFFE34D59)),
+                            SizedBox(height: 12.h),
+                            Text('加载失败', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: const Color(0xFF1D2129))),
+                            SizedBox(height: 4.h),
+                            Text(_error!, style: TextStyle(fontSize: 13.sp, color: const Color(0xFF86909C)),
+                                textAlign: TextAlign.center).paddingSymmetric(horizontal: 32.w),
+                            SizedBox(height: 16.h),
+                            ElevatedButton(
+                              onPressed: _loadAllData,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0052D9),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                              ),
+                              child: const Text('重试'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildDailyTab(spacing),
+                          _buildMonthlyTab(spacing),
+                          _buildPackageTab(spacing),
+                          _buildMemberAnalysisTab(spacing),
+                        ],
+                      ),
           ),
         ],
       ),
@@ -226,15 +209,20 @@ class _ReportCenterPageState extends State<ReportCenterPage>
 
   /// 日报 Tab
   Widget _buildDailyTab(double spacing) {
-    final data = _dailyData.isNotEmpty ? _dailyData : _mockDaily;
-    final revenue = data['revenue'] ?? 3280;
-    final consumeCount = data['consumeCount'] ?? 18;
-    final yesterdayRevenue = data['yesterdayRevenue'] ?? 2960;
-    final yesterdayConsume = data['yesterdayConsumeCount'] ?? 15;
-    final wechat = data['wechatPay'] ?? 65;
-    final alipay = data['alipayPay'] ?? 20;
-    final cash = data['cashPay'] ?? 10;
-    final card = data['cardPay'] ?? 5;
+    if (_dailyData.isEmpty) {
+      return Center(
+        child: Text('暂无日报数据', style: TextStyle(fontSize: 14.sp, color: const Color(0xFF86909C))),
+      );
+    }
+    final data = _dailyData;
+    final revenue = data['revenue'] ?? 0;
+    final consumeCount = data['consumeCount'] ?? 0;
+    final yesterdayRevenue = data['yesterdayRevenue'] ?? 0;
+    final yesterdayConsume = data['yesterdayConsumeCount'] ?? 0;
+    final wechat = data['wechatPay'] ?? 0;
+    final alipay = data['alipayPay'] ?? 0;
+    final cash = data['cashPay'] ?? 0;
+    final card = data['cardPay'] ?? 0;
 
     final revenueDiff = revenue - yesterdayRevenue;
     final consumeDiff = consumeCount - yesterdayConsume;
@@ -435,11 +423,16 @@ class _ReportCenterPageState extends State<ReportCenterPage>
 
   /// 月报 Tab
   Widget _buildMonthlyTab(double spacing) {
-    final data = _monthlyData.isNotEmpty ? _monthlyData : _mockMonthly;
-    final avgDaily = data['avgDailyRevenue'] ?? 3100;
-    final totalConsume = data['totalConsume'] ?? 420;
-    final newMembers = data['newMembers'] ?? 28;
-    final totalRevenue = data['totalRevenue'] ?? 93000;
+    if (_monthlyData.isEmpty) {
+      return Center(
+        child: Text('暂无月报数据', style: TextStyle(fontSize: 14.sp, color: const Color(0xFF86909C))),
+      );
+    }
+    final data = _monthlyData;
+    final avgDaily = data['avgDailyRevenue'] ?? 0;
+    final totalConsume = data['totalConsume'] ?? 0;
+    final newMembers = data['newMembers'] ?? 0;
+    final totalRevenue = data['totalRevenue'] ?? 0;
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(spacing),
@@ -548,7 +541,11 @@ class _ReportCenterPageState extends State<ReportCenterPage>
 
   /// 套餐分析 Tab
   Widget _buildPackageTab(double spacing) {
-    final data = _packageSales.isNotEmpty ? _packageSales : _mockPackageSales;
+    if (_packageSales.isEmpty) {
+      return Center(
+        child: Text('暂无套餐销量数据', style: TextStyle(fontSize: 14.sp, color: const Color(0xFF86909C))),
+      );
+    }
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(spacing),
@@ -561,8 +558,8 @@ class _ReportCenterPageState extends State<ReportCenterPage>
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF1D2129))),
           SizedBox(height: spacing * 0.75),
-          ...List.generate(data.length, (index) {
-            final item = data[index] as Map<String, dynamic>;
+          ...List.generate(_packageSales.length, (index) {
+            final item = _packageSales[index] as Map<String, dynamic>;
             return _buildPackageSalesCard(item, index + 1, spacing);
           }),
         ],
@@ -656,10 +653,14 @@ class _ReportCenterPageState extends State<ReportCenterPage>
 
   /// 会员分析 Tab
   Widget _buildMemberAnalysisTab(double spacing) {
-    final data =
-        _memberAnalysis.isNotEmpty ? _memberAnalysis : _mockMemberAnalysis;
-    final trend = (data['newTrend'] as List<dynamic>?) ?? _mockMemberAnalysis['newTrend'];
-    final churn = (data['churnWarning'] as List<dynamic>?) ?? _mockMemberAnalysis['churnWarning'];
+    if (_memberAnalysis.isEmpty) {
+      return Center(
+        child: Text('暂无会员分析数据', style: TextStyle(fontSize: 14.sp, color: const Color(0xFF86909C))),
+      );
+    }
+    final data = _memberAnalysis;
+    final trend = (data['newTrend'] as List<dynamic>?) ?? [];
+    final churn = (data['churnWarning'] as List<dynamic>?) ?? [];
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(spacing),
