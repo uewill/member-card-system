@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routers import auth, members, cards, products, card_types, bonus_rules, verify, recharge, performance, settings, print_templates, reports, marketing
+from app.routers import auth, members, cards, products, card_types, bonus_rules, verify, recharge, performance, settings, print_templates, reports, marketing, employees, card_operations, orders, roles
 
 Base.metadata.create_all(bind=engine)
 
@@ -32,6 +32,10 @@ app.include_router(settings.router, prefix="/settings", tags=["门店设置"])
 app.include_router(print_templates.router, prefix="/print-templates", tags=["打印模板"])
 app.include_router(reports.router, prefix="/reports", tags=["报表中心"])
 app.include_router(marketing.router, prefix="/marketing", tags=["营销工具"])
+app.include_router(employees.router, prefix="/employees", tags=["员工管理"])
+app.include_router(card_operations.router, prefix="/card-operations", tags=["卡操作"])
+app.include_router(orders.router, prefix="/orders", tags=["消费订单"])
+app.include_router(roles.router, prefix="/roles", tags=["RBAC"])
 
 # /api/v1/ 前缀兼容路由（供 Flutter 前端按 openspec 规范调用）
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["认证"])
@@ -47,6 +51,10 @@ app.include_router(settings.router, prefix="/api/v1/settings", tags=["门店设�
 app.include_router(print_templates.router, prefix="/api/v1/print-templates", tags=["打印模板"])
 app.include_router(reports.router, prefix="/api/v1/reports", tags=["报表中心"])
 app.include_router(marketing.router, prefix="/api/v1/marketing", tags=["营销工具"])
+app.include_router(employees.router, prefix="/api/v1/employees", tags=["员工管理"])
+app.include_router(card_operations.router, prefix="/api/v1/card-operations", tags=["卡操作"])
+app.include_router(orders.router, prefix="/api/v1/orders", tags=["消费订单"])
+app.include_router(roles.router, prefix="/api/v1/roles", tags=["RBAC"])
 
 
 @app.get("/")

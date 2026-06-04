@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from datetime import datetime, timedelta
 from app.database import SessionLocal, engine, Base
-from app.models import Store, Staff, Member, CardType, MemberCard, Product, BonusRule, VerifyRecord, RechargeRecord, PrintTemplate
+from app.models import Store, Staff, Member, CardType, MemberCard, Product, BonusRule, VerifyRecord, RechargeRecord, PrintTemplate, Role, Permission, PointsRule, MarketingSettings, Coupon, MessageTemplate
 from app.auth import get_password_hash
 
 
@@ -166,6 +166,55 @@ def init_db():
             db.add(pt)
         db.commit()
         print(f"PrintTemplates created: {len(templates_data)}")
+
+        # 11. 默认角色
+        roles_data = [
+            {"name": "平台超管", "code": "PLATFORM_ADMIN", "description": "平台超级管理员，拥有所有权限"},
+            {"name": "商户管理员", "code": "MERCHANT_ADMIN", "description": "商户管理员，管理门店和员工"},
+            {"name": "门店经理", "code": "STORE_MANAGER", "description": "门店经理，管理门店日常运营"},
+            {"name": "收银员", "code": "CASHIER", "description": "收银员，负责收银和开卡"},
+            {"name": "服务人员", "code": "SERVICE_STAFF", "description": "服务人员，提供服务和核销"},
+            {"name": "会员", "code": "MEMBER", "description": "会员，查看自身信息和使用服务"},
+        ]
+        for r_data in roles_data:
+            role = Role(**r_data)
+            db.add(role)
+        db.commit()
+        print(f"Roles created: {len(roles_data)}")
+
+        # 12. 默认积分规则
+        points_rule = PointsRule(store_id=store.id, earn_ratio=1.0, status="启用")
+        db.add(points_rule)
+        db.commit()
+        print(f"PointsRule created: earn_ratio=1.0")
+
+        # 13. 默认营销设置
+        marketing_settings = MarketingSettings(store_id=store.id, points_enabled=True, coupon_enabled=True, message_enabled=True)
+        db.add(marketing_settings)
+        db.commit()
+        print(f"MarketingSettings created: all enabled")
+
+        # 14. 默认优惠券
+        coupons_data = [
+            {"store_id": store.id, "name": "新客满200减30", "type": "满减券", "discount_value": 30, "min_amount": 200, "total_count": 100, "valid_from": "2026-01-01", "valid_until": "2026-12-31", "status": "启用"},
+            {"store_id": store.id, "name": "VIP 8折券", "type": "折扣券", "discount_value": 0.8, "min_amount": 100, "total_count": 50, "valid_from": "2026-01-01", "valid_until": "2026-12-31", "status": "启用"},
+        ]
+        for c_data in coupons_data:
+            coupon = Coupon(**c_data)
+            db.add(coupon)
+        db.commit()
+        print(f"Coupons created: {len(coupons_data)}")
+
+        # 15. 默认消息模板
+        msg_templates_data = [
+            {"store_id": store.id, "name": "卡到期提醒", "type": "卡到期提醒", "channel": "短信", "content": "尊敬的会员，您的{card_name}将于{valid_end}到期，请及时使用。", "status": "启用"},
+            {"store_id": store.id, "name": "生日祝福", "type": "生日祝福", "channel": "短信", "content": "亲爱的{name}，祝您生日快乐！凭此短信可享生日专属优惠。", "status": "启用"},
+        ]
+        for t_data in msg_templates_data:
+            tmpl = MessageTemplate(**t_data)
+            db.add(tmpl)
+        db.commit()
+        print(f"MessageTemplates created: {len(msg_templates_data)}")
 
         print("\nDatabase initialized successfully!")
         print(f"Login: username=staff, password=123456")
